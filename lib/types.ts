@@ -19,6 +19,7 @@ export interface ScoredProfessor extends Professor {
 }
 
 export interface StudentProfile {
+  name: string;
   skills: string[];
   researchDomains: string[];
   backgroundSummary: string;

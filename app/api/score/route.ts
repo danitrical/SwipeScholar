@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-const client = new Anthropic();
+const client = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+  defaultHeaders: { "X-Title": "SwipeScholar" },
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { studentProfile, professor } = body;
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const completion = await client.chat.completions.create({
+      model: "anthropic/claude-sonnet-4-5",
       max_tokens: 512,
-      system:
-        "You are a research alignment scorer. Given a student profile and a professor's details, score the research alignment from 0-100 and write one sentence explaining the strongest connection. Return JSON only with keys: score (number between 0-100), reason (string, one sentence, no more than 20 words).",
       messages: [
+        {
+          role: "system",
+          content:
+            "You are a research alignment scorer. Given a student profile and a professor's details, score the research alignment from 0-100 and write one sentence explaining the strongest connection. Return JSON only with keys: score (number between 0-100), reason (string, one sentence, no more than 20 words).",
+        },
         {
           role: "user",
           content: `Student Profile:
@@ -33,10 +40,7 @@ Paper Abstract: ${professor.paperAbstract}`,
       ],
     });
 
-    const content = message.content[0];
-    if (content.type !== "text") throw new Error("Unexpected response type");
-
-    let jsonText = content.text.trim();
+    let jsonText = (completion.choices[0].message.content ?? "").trim();
     if (jsonText.startsWith("```")) {
       jsonText = jsonText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     }

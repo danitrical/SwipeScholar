@@ -63,7 +63,7 @@ export default function UploadPage() {
     <div className="fade-up">
       {/* Hero */}
       <div className="text-center mb-10">
-        <div className="text-5xl mb-3">🍇</div>
+        <div className="text-5xl mb-3">🎓</div>
         <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
           Find your research match
         </h1>

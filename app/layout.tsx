@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "VineMatch — Find Your Research Match",
+  title: "SwipeScholar — Find Your Research Match",
   description: "Swipe through UMD professor cards, find your research match, send the perfect cold email.",
 };
 
@@ -16,9 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
             <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <span className="text-xl">🍇</span>
+              <span className="text-xl">🎓</span>
               <span className="font-extrabold text-lg tracking-tight" style={{ color: "#D85A30" }}>
-                VineMatch
+                SwipeScholar
               </span>
             </a>
             <p className="text-xs font-medium" style={{ color: "#9CA3AF" }}>

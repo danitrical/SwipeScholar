@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-const client = new Anthropic();
+const client = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+  defaultHeaders: { "X-Title": "SwipeScholar" },
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,17 +23,19 @@ export async function POST(request: NextRequest) {
         const result = await parser.getText();
         resumeText = result.text;
       } catch {
-        // Non-fatal: fall back to interests only
         resumeText = "";
       }
     }
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const completion = await client.chat.completions.create({
+      model: "anthropic/claude-sonnet-4-5",
       max_tokens: 1024,
-      system:
-        "You are a research profile extractor. Given a student's resume text and research interests, extract: their top 3 technical skills, top 2 research domains, one sentence summary of their background, and one concrete project they could propose to a professor. Return JSON only with keys: skills (array of 3 strings), researchDomains (array of 2 strings), backgroundSummary (string), proposedProject (string).",
       messages: [
+        {
+          role: "system",
+          content:
+            "You are a research profile extractor. Given a student's resume text and research interests, extract: their full name (from the resume header or contact info, or 'Student' if not found), top 3 technical skills, top 2 research domains, one sentence summary of their background, and one concrete project they could propose to a professor. Return JSON only with keys: name (string), skills (array of 3 strings), researchDomains (array of 2 strings), backgroundSummary (string), proposedProject (string).",
+        },
         {
           role: "user",
           content: `Resume:\n${resumeText || "(no resume provided)"}\n\nResearch Interests:\n${interests || "(none provided)"}`,
@@ -37,10 +43,7 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    const content = message.content[0];
-    if (content.type !== "text") throw new Error("Unexpected response type");
-
-    let jsonText = content.text.trim();
+    let jsonText = (completion.choices[0].message.content ?? "").trim();
     if (jsonText.startsWith("```")) {
       jsonText = jsonText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     }

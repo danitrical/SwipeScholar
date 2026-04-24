@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-const client = new Anthropic();
+const client = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+  defaultHeaders: { "X-Title": "SwipeScholar" },
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { studentProfile, professor } = body;
 
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const completion = await client.chat.completions.create({
+      model: "anthropic/claude-sonnet-4-5",
       max_tokens: 1024,
-      system:
-        "You are an academic cold email writer. Write a 4-paragraph email from a student to a professor. Paragraph 1: hook referencing a specific claim from their latest paper. Paragraph 2: student background and relevant project. Paragraph 3: concrete 10-hour starter project they could work on together. Paragraph 4: polite ask for a 20-minute call. Tone: confident but not sycophantic. Under 250 words. Output only the email body, no subject line, no 'Subject:' prefix.",
       messages: [
+        {
+          role: "system",
+          content:
+            "You are an academic cold email writer. Write a 4-paragraph email from a student to a professor. Paragraph 1: hook referencing a specific claim from their latest paper. Paragraph 2: student background and relevant project. Paragraph 3: concrete 10-hour starter project they could work on together. Paragraph 4: polite ask for a 20-minute call. Tone: confident but not sycophantic. Under 250 words. Output only the email body, no subject line, no 'Subject:' prefix.",
+        },
         {
           role: "user",
           content: `Student Profile:
@@ -35,10 +42,8 @@ Write the email body now.`,
       ],
     });
 
-    const content = message.content[0];
-    if (content.type !== "text") throw new Error("Unexpected response type");
-
-    return NextResponse.json({ email: content.text.trim() });
+    const email = (completion.choices[0].message.content ?? "").trim();
+    return NextResponse.json({ email });
   } catch (error) {
     console.error("Draft error:", error);
     return NextResponse.json({ error: "Failed to draft email" }, { status: 500 });
